@@ -1,6 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Optional
 import csv
 import os
 
@@ -21,6 +20,7 @@ if not os.path.exists(CSV_FILE):
         writer = csv.writer(file)
         writer.writerow(['id', 'title', 'done'])
 
+
 @app.post("/tasks")
 def add_item(task: Task):
 
@@ -30,6 +30,7 @@ def add_item(task: Task):
         writer.writerow(task.model_dump())
 
     return {"message": "Task added successfully"}
+
 
 @app.get("/tasks")
 def get_items():
@@ -41,6 +42,7 @@ def get_items():
             response.append(row)
 
     return response
+
 
 @app.get("/tasks/{title_to_get}")
 def get_item_by_title(title_to_get: str):
@@ -70,12 +72,12 @@ def update_item(title_id: str, task: Task):
             row['title'] = task.title
             row['id'] = task.id
             row['done'] = task.done
-               
-    with open(CSV_FILE, mode='w', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=['id', 'title', 'done'])
-        writer.writeheader()
-        writer.writerows(items)
-    
+
+        with open(CSV_FILE, mode='w', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=['id', 'title', 'done'])
+            writer.writeheader()
+            writer.writerows(items)
+
     return "updated succusful"
 
 @app.delete("/tasks/{task_name}")
