@@ -1,13 +1,15 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Security
 from sqlalchemy.orm import Session
 from typing import List
 
 import models, schemas
 from models import SessionLocal, engine
+from utils import VerifyToken
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+auth = VerifyToken()
 
 def get_db():
     db = SessionLocal()
@@ -75,3 +77,7 @@ def read_post(post_id: int, db : Session = Depends(get_db)):
     if post is None:
         raise HTTPException(status_code=404, detail="Post not found")
     return post
+
+@app.get("/login")
+def login(auth_result: str = Security(auth.verify)):
+    return auth_result
