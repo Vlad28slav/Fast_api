@@ -1,15 +1,30 @@
-from fastapi import FastAPI, Depends, HTTPException, Security
+from fastapi import FastAPI, Depends, HTTPException, Security, Request
 from sqlalchemy.orm import Session
 from typing import List
+import httpx
 
 import models, schemas
 from models import SessionLocal, engine
-from utils import VerifyToken
+from utils import AuthMiddleware, exchange_code_for_token
+from config import get_settings
+
+settings = get_settings()
+
+AUTH0_DOMAIN = settings.auth0_domain
+AUTH0_TOKEN_URL = f"https://{AUTH0_DOMAIN}/oauth/token"
+AUTH0_JWKS_URL = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json"
 
 models.Base.metadata.create_all(bind=engine)
-
 app = FastAPI()
-auth = VerifyToken()
+
+app.add_middleware(
+    AuthMiddleware,
+    auth0_domain=AUTH0_DOMAIN,
+    client_id=settings.auth0_client_id,
+    audience=settings.auth0_api_audience,
+    algorithms=settings.auth0_algorithms
+
+)
 
 def get_db():
     db = SessionLocal()
@@ -78,6 +93,26 @@ def read_post(post_id: int, db : Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Post not found")
     return post
 
-@app.get("/login")
-def login(auth_result: str = Security(auth.verify)):
-    return auth_result
+@app.get("/callback")
+async def auth_callback(request: Request):
+    code = request.query_params.get("code")
+    if code:
+        token_response = await exchange_code_for_token(code)
+        return token_response
+    return {"error": "Authorization code not provided"}
+
+
+@app.get("/protected-resource")
+async def protected_resource(request: Request):
+    access_token = request.query_params.get("access_token")
+    if access_token:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "http://127.0.0.1",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return {"error": response.json()}
+    return {"error": "Access token not provided"}
