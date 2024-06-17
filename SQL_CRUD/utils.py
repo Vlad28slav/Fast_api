@@ -16,6 +16,8 @@ AUTH0_CLIENT_SECRET = settings.auth0_client_secret
 AUTH0_CALLBACK_URL = settings.auth0_callback_url
 AUTH0_TOKEN_URL = f"https://{AUTH0_DOMAIN}/oauth/token"
 AUTH0_API_AUDIENCE = settings.auth0_api_audience
+
+
 class AuthMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, auth0_domain, client_id, audience, algorithms):
         super().__init__(app)
@@ -29,7 +31,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         response = httpx.get(f"https://{self.auth0_domain}/.well-known/jwks.json")
         return response.json()
 
-    async def decode_token(self, token: str):
+    async def decode_token(self, token: str, id_token: bool = False):
         unverified_header = jwt.get_unverified_header(token)
         rsa_key = {}
         for key in self.jwks["keys"]:
@@ -41,9 +43,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
                     "n": key["n"],
                     "e": key["e"]
                 }
+        audience = self.audience if not id_token else self.client_id
         if rsa_key:
             try:
-                payload = jwt.decode(token, rsa_key, algorithms=self.algorithms, audience=self.audience)
+                payload = jwt.decode(token, rsa_key, algorithms=self.algorithms, audience=audience)
                 return payload
             except JWTError:
                 raise HTTPException(status_code=401, detail="Invalid token")

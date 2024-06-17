@@ -95,12 +95,29 @@ def read_post(post_id: int, db : Session = Depends(get_db)):
     return post
 
 @app.get("/callback")
-async def auth_callback(request: Request):
+async def auth_callback(request: Request, db: Session = Depends(get_db)):
     code = request.query_params.get("code")
-    if code:
-        token_response = await exchange_code_for_token(code)
+    if not code:
+        return {"error": "Authorization code not provided"}
+    token_response = await exchange_code_for_token(code)
+    if "error" in token_response:
         return token_response
-    return {"error": "Authorization code not provided"}
+    id_token = token_response["id_token"]
+    auth = AuthMiddleware(
+        app,
+        auth0_domain=AUTH0_DOMAIN,
+        client_id=settings.auth0_client_id,
+        audience=settings.auth0_api_audience,
+        algorithms=settings.auth0_algorithms
+    )
+    payload = await auth.decode_token(id_token, id_token=True)
+    user = db.query(models.User).filter(models.User.email == payload.get("email")).first()
+    if user is None:
+        db_user = models.User(name=payload.get("given_name"), email=payload.get("email"))
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+    return token_response
 
 
 @app.get('/logout')

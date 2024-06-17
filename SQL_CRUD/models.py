@@ -14,6 +14,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     posts = relationship( "Post", back_populates="owner")
 
+
 class Post(Base):
     __tablename__ = "posts"
 
