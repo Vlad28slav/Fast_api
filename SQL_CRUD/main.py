@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Security, Request
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from typing import List
 import httpx
@@ -102,17 +103,7 @@ async def auth_callback(request: Request):
     return {"error": "Authorization code not provided"}
 
 
-@app.get("/protected-resource")
-async def protected_resource(request: Request):
-    access_token = request.query_params.get("access_token")
-    if access_token:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                "http://127.0.0.1",
-                headers={"Authorization": f"Bearer {access_token}"}
-            )
-            if response.status_code == 200:
-                return response.json()
-            else:
-                return {"error": response.json()}
-    return {"error": "Access token not provided"}
+@app.get('/logout')
+async def logout(request: Request):
+    redirect_url = f"https://{AUTH0_DOMAIN}/v2/logout?client_id={settings.auth0_client_id}&returnTo=http://localhost:8000"
+    return RedirectResponse(url=redirect_url)
