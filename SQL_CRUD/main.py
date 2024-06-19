@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, Security, Request
 from fastapi.responses import RedirectResponse
+from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy.orm import Session
 from typing import List
 import httpx
@@ -12,12 +13,13 @@ from config import get_settings
 settings = get_settings()
 
 AUTH0_DOMAIN = settings.auth0_domain
+SECRET_KEY = settings.secret_key
 AUTH0_TOKEN_URL = f"https://{AUTH0_DOMAIN}/oauth/token"
 AUTH0_JWKS_URL = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json"
 
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
-
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 app.add_middleware(
     AuthMiddleware,
     auth0_domain=AUTH0_DOMAIN,
@@ -75,8 +77,9 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 @app.post("/posts/", response_model=schemas.Post)
-def create_post(post: schemas.PostCreate, db: Session = Depends(get_db)):
-    db_post = models.Post(title=post.title, content=post.content, owners_id=1)  # Hardcoded owners_id for simplicity
+def create_post(request: Request, post: schemas.PostCreate, db: Session = Depends(get_db)):
+    print(request.session)
+    db_post = models.Post(title=post.title, content=post.content, owners_id=request.session.get("id"))
     db.add(db_post)
     db.commit()
     db.refresh(db_post)
@@ -113,10 +116,16 @@ async def auth_callback(request: Request, db: Session = Depends(get_db)):
     payload = await auth.decode_token(id_token, id_token=True)
     user = db.query(models.User).filter(models.User.email == payload.get("email")).first()
     if user is None:
-        db_user = models.User(name=payload.get("given_name"), email=payload.get("email"))
-        db.add(db_user)
+        user = models.User(name=payload.get("given_name"), email=payload.get("email"))
+        db.add(user)
         db.commit()
-        db.refresh(db_user)
+        db.refresh(user)
+    request.session.update({
+        "id": user.id,
+        "name": payload.get("given_name"),
+        "email": payload.get("email"),
+    })
+    print(request.session)
     return token_response
 
 

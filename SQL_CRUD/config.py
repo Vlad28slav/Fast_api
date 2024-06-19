@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     auth0_client_secret: str
     auth0_client_id: str
     auth0_callback_url: str
+    secret_key: str
 
 
     class Config:
