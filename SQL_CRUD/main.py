@@ -1,9 +1,8 @@
-from fastapi import FastAPI, Depends, HTTPException, Security, Request
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy.orm import Session
 from typing import List
-import httpx
 
 import models, schemas
 from models import SessionLocal, engine

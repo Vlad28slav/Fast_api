@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     auth0_client_id: str
     auth0_callback_url: str
     secret_key: str
+    user_db: str
+    password_to_user: str
+    host: str
+    port: str
+    database: str
 
 
     class Config:
