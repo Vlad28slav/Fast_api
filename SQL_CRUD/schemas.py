@@ -1,12 +1,15 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
+
 
 class PostBase(BaseModel):
     title: str
     content: str
 
+
 class PostCreate(PostBase):
     pass
+
 
 class Post(PostBase):
     id: int
@@ -15,12 +18,15 @@ class Post(PostBase):
     class Config:
         orm_mode = True
 
+
 class UserBase(BaseModel):
     name: str
     email: str
 
+
 class UserCreate(UserBase):
     pass
+
 
 class User(UserBase):
     id: int

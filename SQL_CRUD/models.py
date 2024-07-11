@@ -6,14 +6,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-#DATABASE_URL = "sqlite:///./test.db"
 user = os.getenv('USER_DB')
 password = os.getenv('PASSWORD_TO_USER')
 host = os.getenv('HOST')
 port = os.getenv('PORT')
 database = os.getenv('DATABASE')
 
-connection_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+connection_str = \
+    f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
 Base = declarative_base()
 
 
