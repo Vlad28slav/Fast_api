@@ -6,11 +6,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-user = os.getenv('USER_DB')
-password = os.getenv('PASSWORD_TO_USER')
-host = os.getenv('HOST')
-port = os.getenv('PORT')
-database = os.getenv('DATABASE')
+user = os.getenv('POSTGRES_USER')
+password = os.getenv('POSTGRES_PASSWORD')
+host= os.getenv('POSTGRES_HOST')
+port = os.getenv('POSTGRES_PORT')
+database= os.getenv('POSTGRES_DB')
 
 connection_str = \
     f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"

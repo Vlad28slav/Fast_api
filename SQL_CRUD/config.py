@@ -12,11 +12,11 @@ class Settings(BaseSettings):
     auth0_client_id: str
     auth0_callback_url: str
     secret_key: str
-    user_db: str
-    password_to_user: str
-    host: str
-    port: str
-    database: str
+    postgres_user: str
+    postgres_password: str
+    postgres_host: str
+    postgres_port: str
+    postgres_db: str
 
     class Config:
         env_file = ".env"
