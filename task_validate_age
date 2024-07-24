@@ -23,24 +23,24 @@ class Person:
             self._age = value
         else:
             raise ValueError("Age must be a positive integer")
-        
+
     @property
     def id(self):
         return self._id
-    
+
     @id.setter
     def id(self, value):
         if not (value is None):
             self._id = value
         else:
             raise ValueError("Id requeired")
-        
+
     @id.deleter
     def id(self):
         raise AttributeError("Cannot delete property id")
 
 
-        
+
 
 chelik = Person("Boris", 55, "soyjack228")
 print(chelik.age)
