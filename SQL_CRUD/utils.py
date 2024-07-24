@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import Request, HTTPException
 from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 import httpx
@@ -65,7 +65,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 return response
             except HTTPException:
                 pass
-        redirect_url = f"{AUTH0_AUTHORIZE_URL}?response_type=code&client_id={self.client_id}&redirect_uri={AUTH0_CALLBACK_URL}&scope=openid profile email&audience={AUTH0_API_AUDIENCE}"
+        redirect_url = (
+            f"{AUTH0_AUTHORIZE_URL}?response_type=code&client_id={self.client_id}"
+        )
+        redirect_url += f"&redirect_uri={AUTH0_CALLBACK_URL}&scope=openid profile email"
+        redirect_url += f"&audience={AUTH0_API_AUDIENCE}"
         return RedirectResponse(url=redirect_url)
 
 

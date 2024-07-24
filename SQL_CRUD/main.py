@@ -87,7 +87,9 @@ def create_post(
     request: Request, post: schemas.PostCreate, db: Session = Depends(get_db)
 ):
     db_post = models.Post(
-        title=post.title, content=post.content, owners_id=request.session.get("id")
+        title=post.title,
+        content=post.content,
+        owners_id=request.session.get("id"),
     )
     db.add(db_post)
     db.commit()
@@ -97,7 +99,10 @@ def create_post(
 
 @app.get("/posts/", response_model=List[schemas.Post])
 def read_posts(
-    request: Request, skip: int = 0, limit: int = 10, db: Session = Depends(get_db)
+    request: Request,
+    skip: int = 0,
+    limit: int = 10,
+    db: Session = Depends(get_db),
 ):
     user_id = request.session.get("id")
     posts = (
