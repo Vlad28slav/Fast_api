@@ -40,12 +40,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
                     "kid": key["kid"],
                     "use": key["use"],
                     "n": key["n"],
-                    "e": key["e"]
+                    "e": key["e"],
                 }
         audience = self.audience if not id_token else self.client_id
         if rsa_key:
             try:
-                payload = jwt.decode(token, rsa_key, algorithms=self.algorithms, audience=audience)
+                payload = jwt.decode(
+                    token, rsa_key, algorithms=self.algorithms, audience=audience
+                )
                 return payload
             except JWTError:
                 raise HTTPException(status_code=401, detail="Invalid token")
@@ -55,8 +57,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if request.url.path == "/callback":
             response = await call_next(request)
             return response
-        if 'authorization' in request.headers:
-            token = request.headers.get('authorization').split("Bearer ")[-1]
+        if "authorization" in request.headers:
+            token = request.headers.get("authorization").split("Bearer ")[-1]
             try:
                 await self.decode_token(token)
                 response = await call_next(request)
@@ -65,7 +67,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 pass
         redirect_url = f"{AUTH0_AUTHORIZE_URL}?response_type=code&client_id={self.client_id}&redirect_uri={AUTH0_CALLBACK_URL}&scope=openid profile email&audience={AUTH0_API_AUDIENCE}"
         return RedirectResponse(url=redirect_url)
-   
+
+
 async def exchange_code_for_token(code: str):
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -77,10 +80,9 @@ async def exchange_code_for_token(code: str):
                 "client_secret": AUTH0_CLIENT_SECRET,
                 "code": code,
                 "redirect_uri": AUTH0_CALLBACK_URL,
-                "audience": AUTH0_API_AUDIENCE
+                "audience": AUTH0_API_AUDIENCE,
             },
         )
         if response.status_code == 200:
             return response.json()
         return {"error": response.json()}
-            

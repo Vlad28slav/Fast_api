@@ -6,14 +6,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-user = os.getenv('POSTGRES_USER')
-password = os.getenv('POSTGRES_PASSWORD')
-host= os.getenv('POSTGRES_HOST')
-port = os.getenv('POSTGRES_PORT')
-database= os.getenv('POSTGRES_DB')
+user = os.getenv("POSTGRES_USER")
+password = os.getenv("POSTGRES_PASSWORD")
+host = os.getenv("POSTGRES_HOST")
+port = os.getenv("POSTGRES_PORT")
+database = os.getenv("POSTGRES_DB")
 
-connection_str = \
-    f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+connection_str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
 Base = declarative_base()
 
 
@@ -32,8 +31,8 @@ class Post(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
     content = Column(String, index=True)
-    owners_id = Column(Integer, ForeignKey('users.id'))
-    owner = relationship("User", back_populates='posts')
+    owners_id = Column(Integer, ForeignKey("users.id"))
+    owner = relationship("User", back_populates="posts")
 
 
 engine = create_engine(connection_str)

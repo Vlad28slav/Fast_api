@@ -25,8 +25,7 @@ app.add_middleware(
     auth0_domain=AUTH0_DOMAIN,
     client_id=settings.auth0_client_id,
     audience=settings.auth0_api_audience,
-    algorithms=settings.auth0_algorithms
-
+    algorithms=settings.auth0_algorithms,
 )
 
 
@@ -62,8 +61,7 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
 
 
 @app.put("/users/{user_id}", response_model=schemas.User)
-def update_user(user_id: int,
-                user: schemas.UserCreate, db: Session = Depends(get_db)):
+def update_user(user_id: int, user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -85,12 +83,12 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
 
 
 @app.post("/posts/", response_model=schemas.Post)
-def create_post(request: Request,
-                post: schemas.PostCreate,
-                db: Session = Depends(get_db)):
-    db_post = models.Post(title=post.title,
-                          content=post.content,
-                          owners_id=request.session.get("id"))
+def create_post(
+    request: Request, post: schemas.PostCreate, db: Session = Depends(get_db)
+):
+    db_post = models.Post(
+        title=post.title, content=post.content, owners_id=request.session.get("id")
+    )
     db.add(db_post)
     db.commit()
     db.refresh(db_post)
@@ -98,22 +96,27 @@ def create_post(request: Request,
 
 
 @app.get("/posts/", response_model=List[schemas.Post])
-def read_posts(request: Request,
-               skip: int = 0,
-               limit: int = 10,
-               db: Session = Depends(get_db)):
+def read_posts(
+    request: Request, skip: int = 0, limit: int = 10, db: Session = Depends(get_db)
+):
     user_id = request.session.get("id")
-    posts = db.query(models.Post).\
-        filter(models.Post.owners_id == user_id).offset(skip).limit(limit)
+    posts = (
+        db.query(models.Post)
+        .filter(models.Post.owners_id == user_id)
+        .offset(skip)
+        .limit(limit)
+    )
     return posts
 
 
 @app.get("/posts/{post_id}", response_model=schemas.Post)
 def read_post(request: Request, post_id: int, db: Session = Depends(get_db)):
     user_id = request.session.get("id")
-    post = db.query(models.Post).\
-        filter(models.Post.id == post_id,
-               models.Post.owners_id == user_id).first()
+    post = (
+        db.query(models.Post)
+        .filter(models.Post.id == post_id, models.Post.owners_id == user_id)
+        .first()
+    )
     if post is None:
         raise HTTPException(status_code=404, detail="Post not found")
     return post
@@ -122,9 +125,11 @@ def read_post(request: Request, post_id: int, db: Session = Depends(get_db)):
 @app.delete("/posts/{post_id}")
 def delete_post(request: Request, post_id: int, db: Session = Depends(get_db)):
     user_id = request.session.get("id")
-    db_post = db.query(models.Post).\
-        filter(models.Post.id == post_id,
-               models.Post.owners_id == user_id).first()
+    db_post = (
+        db.query(models.Post)
+        .filter(models.Post.id == post_id, models.Post.owners_id == user_id)
+        .first()
+    )
     if db_post is None:
         raise HTTPException(status_code=404, detail="Post not found")
     db.delete(db_post)
@@ -146,27 +151,29 @@ async def auth_callback(request: Request, db: Session = Depends(get_db)):
         auth0_domain=AUTH0_DOMAIN,
         client_id=settings.auth0_client_id,
         audience=settings.auth0_api_audience,
-        algorithms=settings.auth0_algorithms
+        algorithms=settings.auth0_algorithms,
     )
     payload = await auth.decode_token(id_token, id_token=True)
-    user = db.query(models.User).\
-        filter(models.User.email == payload.get("email")).first()
+    user = (
+        db.query(models.User).filter(models.User.email == payload.get("email")).first()
+    )
     if user is None:
-        user = models.User(name=payload.get("given_name"),
-                           email=payload.get("email"))
+        user = models.User(name=payload.get("given_name"), email=payload.get("email"))
         db.add(user)
         db.commit()
         db.refresh(user)
-    request.session.update({
-        "id": user.id,
-        "name": payload.get("given_name"),
-        "email": payload.get("email"),
-    })
+    request.session.update(
+        {
+            "id": user.id,
+            "name": payload.get("given_name"),
+            "email": payload.get("email"),
+        }
+    )
     print(request.session)
     return token_response
 
 
-@app.get('/logout')
+@app.get("/logout")
 async def logout(request: Request):
     redirect_url = f"https://{AUTH0_DOMAIN}/v2/logout?\
         client_id={settings.auth0_client_id}&returnTo=http://localhost:8000"
