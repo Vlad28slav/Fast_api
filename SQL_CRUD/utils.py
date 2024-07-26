@@ -1,3 +1,4 @@
+"""Import fastapi's tools"""
 from fastapi import Request, HTTPException
 from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -18,6 +19,8 @@ AUTH0_API_AUDIENCE = settings.auth0_api_audience
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
+    """Definition of middleware that should be added"""
+
     def __init__(self, app, auth0_domain, client_id, audience, algorithms):
         super().__init__(app)
         self.auth0_domain = auth0_domain
@@ -27,33 +30,44 @@ class AuthMiddleware(BaseHTTPMiddleware):
         self.jwks = self.get_jwks()
 
     def get_jwks(self):
+        """Returns the Identity Server's public key set in the JWKS format."""
         response = httpx.get(f"https://{self.auth0_domain}/.well-known/jwks.json")
         return response.json()
 
     async def decode_token(self, token: str, id_token: bool = False):
+        """Try to decode the token to verify connection
+
+        Args:
+            token (str): token to decode
+            id_token (bool, optional): Defaults to False.
+
+        Raises:
+            HTTPException: Raises if nothing in rsa_keys
+            HTTPException: Raises if something went wrong during decoding
+
+        Returns:
+            returns payload
+        """
         unverified_header = jwt.get_unverified_header(token)
-        rsa_key = {}
-        for key in self.jwks["keys"]:
-            if key["kid"] == unverified_header["kid"]:
-                rsa_key = {
-                    "kty": key["kty"],
-                    "kid": key["kid"],
-                    "use": key["use"],
-                    "n": key["n"],
-                    "e": key["e"],
-                }
+        rsa_keys = [
+            key for key in self.jwks["keys"] if key["kid"] == unverified_header["kid"]
+        ]
         audience = self.audience if not id_token else self.client_id
-        if rsa_key:
-            try:
-                payload = jwt.decode(
-                    token, rsa_key, algorithms=self.algorithms, audience=audience
-                )
-                return payload
-            except JWTError:
-                raise HTTPException(status_code=401, detail="Invalid token")
-        raise HTTPException(status_code=401, detail="Invalid token")
+        if not rsa_keys:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        try:
+            payload = jwt.decode(
+                token, rsa_keys[0], algorithms=self.algorithms, audience=audience
+            )
+            return payload
+        except JWTError:
+            raise HTTPException(status_code=401, detail="Invalid token")
 
     async def dispatch(self, request: Request, call_next):
+        """Dispatch function, sets connection or redirects user
+        Returns:
+            Response or redirection link
+        """
         if request.url.path == "/callback":
             response = await call_next(request)
             return response
@@ -74,6 +88,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
 
 async def exchange_code_for_token(code: str):
+    """Trying to exchange code for token
+
+    Args:
+        code (str): code to work with
+
+    Returns:
+        json object with token
+    """
     async with httpx.AsyncClient() as client:
         response = await client.post(
             AUTH0_TOKEN_URL,

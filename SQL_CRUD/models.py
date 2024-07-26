@@ -1,7 +1,10 @@
+"""Import os to use .getenv function"""
+import os
+
 from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
-import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,6 +20,8 @@ Base = declarative_base()
 
 
 class User(Base):
+    """Definition of a User object"""
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -26,6 +31,8 @@ class User(Base):
 
 
 class Post(Base):
+    """Definition of a Post object"""
+
     __tablename__ = "posts"
 
     id = Column(Integer, primary_key=True, index=True)
